@@ -128,6 +128,7 @@
 
 
 
+
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useProfileStore } from '@/stores/profileStore'
@@ -166,7 +167,6 @@ let namaPelatihan: string = 'Memuat...'
 let relevanOptions: Option[] = []
 let tidakRelevanOptions: Option[] = []
 
-
 async function fetchData(id: number) {
   try {
     const res = await fetch(`/api/pertanyaan/pelatihan/${id}`)
@@ -202,14 +202,7 @@ async function fetchTidakRelevanOptions() {
   }
 }
 
-onMounted(() => {
-  if (pelatihan_id) {
-    fetchData(pelatihan_id)
-    fetchRelevanOptions()
-    fetchTidakRelevanOptions()
-  }
-  reset()
-})
+// onMounted lifecycle removed as requested
 
 function handleCheckbox(list: string[], setList: (v: string[]) => void, value: string) {
   if (list.includes(value)) {

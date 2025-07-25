@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts">
-import { ref } from 'vue'
+
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useProfileStore } from '@/stores/profileStore'
@@ -36,6 +36,7 @@ import { useSikapPrilakuStore } from '@/stores/sikapprilakuStore'
 
 export default {
   setup() {
+
     const router = useRouter()
     const toast = useToast()
     const profile = useProfileStore()
@@ -44,19 +45,19 @@ export default {
     const user_id = profile.pelatihan_id // or profile.nama, or add 'id' to the store if needed
     const isPelatihanKhusus = profile.pelatihan_id === 1 || profile.pelatihan_id === 2 || profile.pelatihan_id === 5
 
-    const pertanyaanSikap = ref<{ id: any; text: any; options: any[] } | null>(null)
-    const pertanyaanKinerja = ref<any | null>(null)
-    const pertanyaanEkonomi = ref<any | null>(null)
-    const pertanyaanDampak = ref<any | null>(null)
-    const pertanyaanTransformasi = ref<any | null>(null)
-    const selectedTransformasi = ref<number | null>(null)
-    const selectedSubTransformasi = ref<number | null>(null)
+    let pertanyaanSikap: { id: any; text: any; options: any[] } | null = null
+    let pertanyaanKinerja: any | null = null
+    let pertanyaanEkonomi: any | null = null
+    let pertanyaanDampak: any | null = null
+    let pertanyaanTransformasi: any | null = null
+    let selectedTransformasi: number | null = null
+    let selectedSubTransformasi: number | null = null
 
-    const sikap = ref<string[]>([])
-    const kinerja = ref<string[]>([])
-    const ekonomi = ref('')
-    const dampak = ref<string[]>([])
-    const dampakLain = ref('')
+    let sikap: string[] = []
+    let kinerja: string[] = []
+    let ekonomi: string = ''
+    let dampak: string[] = []
+    let dampakLain: string = ''
 
     async function fetchQuestions() {
       try {
@@ -74,13 +75,13 @@ export default {
           fetch('/api/pertanyaan/10').then(r => r.json()),
           fetch('/api/pertanyaan/26').then(r => r.json()),
         ])
-        pertanyaanSikap.value = { id: sikapRes.question?.id, text: sikapRes.question?.text, options: sikapRes.option || [] }
-        pertanyaanKinerja.value = resKinerja
-        pertanyaanEkonomi.value = resEkonomi
-        pertanyaanDampak.value = resDampak
-        pertanyaanTransformasi.value = resTransformasi
-        selectedTransformasi.value = null
-        selectedSubTransformasi.value = null
+        pertanyaanSikap = { id: sikapRes.question?.id, text: sikapRes.question?.text, options: sikapRes.option || [] }
+        pertanyaanKinerja = resKinerja
+        pertanyaanEkonomi = resEkonomi
+        pertanyaanDampak = resDampak
+        pertanyaanTransformasi = resTransformasi
+        selectedTransformasi = null
+        selectedSubTransformasi = null
       } catch (err) {
         toast.error('Gagal memuat pertanyaan!')
       }
@@ -96,61 +97,61 @@ export default {
 
     async function saveAnswersAndNavigate() {
       if (isPelatihanKhusus) {
-        if (!sikap.value.length || kinerja.value.length !== 3) {
+        if (!sikap.length || kinerja.length !== 3) {
           toast.error('Mohon isi pertanyaan 1 dan 2 dengan lengkap!')
           return false
         }
       } else {
-        if (!sikap.value.length || kinerja.value.length !== 3 || !ekonomi.value || !dampak.value.length) {
+        if (!sikap.length || kinerja.length !== 3 || !ekonomi || !dampak.length) {
           toast.error('Mohon isi semua pertanyaan dengan lengkap!')
           return false
         }
-        if (selectedTransformasi.value === null || selectedSubTransformasi.value === null) {
+        if (selectedTransformasi === null || selectedSubTransformasi === null) {
           toast.error('Mohon pilih bidang dan sub bidang pada pertanyaan 5!')
           return false
         }
       }
       try {
-        if (pertanyaanSikap.value?.id) {
-          for (const ans of sikap.value) {
+        if (pertanyaanSikap?.id) {
+          for (const ans of sikap) {
             await fetch('/api/answers', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ question_id: pertanyaanSikap.value.id, user_id, answer: ans }),
+              body: JSON.stringify({ question_id: pertanyaanSikap.id, user_id, answer: ans }),
             })
           }
         }
-        if (pertanyaanKinerja.value?.id) {
-          for (const ans of kinerja.value) {
+        if (pertanyaanKinerja?.id) {
+          for (const ans of kinerja) {
             await fetch('/api/answers', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ question_id: pertanyaanKinerja.value.id, user_id, answer: ans }),
+              body: JSON.stringify({ question_id: pertanyaanKinerja.id, user_id, answer: ans }),
             })
           }
         }
         if (!isPelatihanKhusus) {
-          if (pertanyaanEkonomi.value?.id) {
+          if (pertanyaanEkonomi?.id) {
             await fetch('/api/answers', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ question_id: pertanyaanEkonomi.value.id, user_id, answer: ekonomi.value }),
+              body: JSON.stringify({ question_id: pertanyaanEkonomi.id, user_id, answer: ekonomi }),
             })
           }
-          if (pertanyaanDampak.value?.id) {
-            for (const ans of dampak.value) {
+          if (pertanyaanDampak?.id) {
+            for (const ans of dampak) {
               await fetch('/api/answers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question_id: pertanyaanDampak.value.id, user_id, answer: ans === 'Yang lain:' ? dampakLain.value : ans }),
+                body: JSON.stringify({ question_id: pertanyaanDampak.id, user_id, answer: ans === 'Yang lain:' ? dampakLain : ans }),
               })
             }
           }
-          if (pertanyaanTransformasi.value?.id && selectedTransformasi.value !== null) {
+          if (pertanyaanTransformasi?.id && selectedTransformasi !== null) {
             await fetch('/api/answers', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ question_id: pertanyaanTransformasi.value.id, user_id, answer: selectedTransformasi.value.toString() }),
+              body: JSON.stringify({ question_id: pertanyaanTransformasi.id, user_id, answer: selectedTransformasi.toString() }),
             })
           }
         }

@@ -50,11 +50,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { useProfileStore } from '@/stores/profileStore'
-import { useSesuaiWaktuStore } from '@/stores/sesuaiwaktuStore'
+import { useProfileStore } from '~/stores/profileStore'
+import { useSesuaiWaktuStore } from '~/stores/sesuaiwaktuStore'
 
 const router = useRouter()
 const toast = useToast()
@@ -63,25 +63,25 @@ const sesuaiWaktuStore = useSesuaiWaktuStore()
 
 const nama = profileStore.nama
 const user_id = profileStore.pelatihan_id
-const jawaban = ref(sesuaiWaktuStore.jawaban)
+let jawaban = sesuaiWaktuStore.jawaban
 const setJawaban = sesuaiWaktuStore.setJawaban
 
-const pertanyaan = ref<{ id: number; text: string; options: { id: number; option_text: string }[] } | null>(null)
+let pertanyaan: { id: number; text: string; options: { id: number; option_text: string }[] } | null = null
 
 if (process.client) {
   (async () => {
     try {
       const res = await fetch('/api/pertanyaan/13')
       const data = await res.json()
-      pertanyaan.value = data
+      pertanyaan = data
     } catch {
-      pertanyaan.value = null
+      pertanyaan = null
     }
   })()
 }
 
 function handleSubmit() {
-  if (!jawaban.value) {
+  if (!jawaban) {
     toast.error('Mohon pilih salah satu jawaban terlebih dahulu!')
     return
   }
@@ -89,9 +89,9 @@ function handleSubmit() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      question_id: pertanyaan.value?.id,
+      question_id: pertanyaan?.id,
       user_id,
-      answer: jawaban.value,
+      answer: jawaban,
     }),
   })
     .then(() => {

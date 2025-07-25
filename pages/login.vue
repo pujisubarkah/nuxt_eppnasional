@@ -9,7 +9,7 @@
         class="object-cover w-full h-full blur-md scale-105 transition duration-700"
         style="filter: brightness(0.7);"
       />
-      <div class="absolute inset-0 bg-gradient-to-br from-[#2196F3]/60 to-[#E3F2FD]/80"></div>
+      <div class="absolute inset-0 bg-gradient-to-br from-[#2196F3]/20 to-[#E3F2FD]/40"></div>
     </div>
 
     <!-- Login Card -->
@@ -86,7 +86,8 @@
 
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+// @ts-ignore: Import DOM types for HTMLElement
+/// <reference lib="dom" />
 import { useRouter } from 'vue-router'
 import { useProfileStore } from '@/stores/profileStore'
 import { useToast } from 'vue-toastification'
@@ -97,22 +98,48 @@ const images = [
   '/DSC_0308.JPG',
   '/DSC_0352.JPG',
 ]
-const currentImage = ref(0)
+let currentImage = 0
 let interval: ReturnType<typeof setInterval> | null = null
 
 function nextImage() {
-  currentImage.value = (currentImage.value + 1) % images.length
+  currentImage = (currentImage + 1) % images.length
+  updateCarousel()
 }
 function prevImage() {
-  currentImage.value = (currentImage.value - 1 + images.length) % images.length
+  currentImage = (currentImage - 1 + images.length) % images.length
+  updateCarousel()
 }
 
-onMounted(() => {
+function startCarousel() {
   interval = setInterval(nextImage, 3500)
-})
-onUnmounted(() => {
+}
+function stopCarousel() {
   if (interval) clearInterval(interval)
-})
+}
+
+// Update carousel image in DOM
+function updateCarousel() {
+  const img = document.querySelector('.md\:flex img') as HTMLImageElement | null
+  if (img) {
+    img.src = images[currentImage]
+    img.alt = `Carousel ${currentImage + 1}`
+  }
+  // Update indicators
+  const indicators = document.querySelectorAll('.flex.justify-center.gap-2.mt-6 span') as NodeListOf<HTMLElement>
+  indicators.forEach((el: HTMLElement, idx: number) => {
+    el.className = idx === currentImage
+      ? 'w-3 h-3 rounded-full transition-all duration-300 bg-[#1976D2] scale-125 shadow-lg'
+      : 'w-3 h-3 rounded-full transition-all duration-300 bg-gray-300'
+  })
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('DOMContentLoaded', () => {
+    startCarousel()
+    updateCarousel()
+  })
+  window.addEventListener('beforeunload', stopCarousel)
+}
 
 // Login logic
 interface User {
@@ -124,25 +151,31 @@ interface LoginResponse {
   // atau properti lain dari response API
 }
 
-const username = ref('')
-const password = ref('')
-const loading = ref(false)
+let username = ''
+let password = ''
+let loading = false
 const router = useRouter()
 const profileStore = useProfileStore()
 const toast = useToast()
 
+function handleInput(e: Event, field: 'username' | 'password') {
+  const target = e.target as HTMLInputElement
+  if (field === 'username') username = target.value
+  if (field === 'password') password = target.value
+}
+
 const handleSubmit = async () => {
-  if (!username.value || !password.value) {
+  if (!username || !password) {
     toast.error('Username dan password harus diisi.')
     return
   }
-  loading.value = true
+  loading = true
   try {
     const res = await $fetch('/api/login', {
       method: 'POST',
       body: {
-        username: username.value,
-        password: password.value,
+        username,
+        password,
       },
     }) as LoginResponse
     if (res && res.user) {
@@ -160,7 +193,7 @@ const handleSubmit = async () => {
       toast.error('Terjadi kesalahan. Silakan coba lagi.')
     }
   } finally {
-    loading.value = false
+    loading = false
   }
 }
 </script>

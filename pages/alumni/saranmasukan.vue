@@ -69,7 +69,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+
+
+
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useProfileStore } from '@/stores/profileStore'
@@ -81,19 +83,20 @@ const profileStore = useProfileStore()
 const saranMasukanStore = useSaranMasukanStore()
 
 const user_id = profileStore.pelatihan_id
-const materi = ref(saranMasukanStore.materi)
-const metode = ref(saranMasukanStore.metode)
-const waktu = ref(saranMasukanStore.waktu)
-const pengajar = ref(saranMasukanStore.pengajar)
+let materi = saranMasukanStore.materi
+let metode = saranMasukanStore.metode
+let waktu = saranMasukanStore.waktu
+let pengajar = saranMasukanStore.pengajar
 
-const pertanyaanLabels = ref({
+let pertanyaanLabels = {
   materi: 'Terkait Materi Pelatihan',
   metode: 'Terkait Metode Pelatihan',
   waktu: 'Terkait Waktu Pelatihan',
   pengajar: 'Terkait Pengajar Pelatihan',
-})
+}
 
-onMounted(async () => {
+// Fetch pertanyaan labels when needed (no onMounted)
+async function fetchPertanyaanLabels() {
   try {
     const [materiRes, metodeRes, waktuRes, pengajarRes] = await Promise.all([
       fetch('/api/pertanyaan/21').then(r => r.json()),
@@ -101,7 +104,7 @@ onMounted(async () => {
       fetch('/api/pertanyaan/23').then(r => r.json()),
       fetch('/api/pertanyaan/24').then(r => r.json()),
     ])
-    pertanyaanLabels.value = {
+    pertanyaanLabels = {
       materi: materiRes.text,
       metode: metodeRes.text,
       waktu: waktuRes.text,
@@ -110,7 +113,10 @@ onMounted(async () => {
   } catch {
     // handle error
   }
-})
+}
+
+// Optionally call fetchPertanyaanLabels() at the top of the script or from a method if you want to load labels
+fetchPertanyaanLabels()
 
 const pertanyaanIds = {
   materi: 21,
@@ -124,22 +130,22 @@ function handleSubmit() {
     fetch('/api/answers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question_id: pertanyaanIds.materi, user_id, answer: materi.value || null }),
+      body: JSON.stringify({ question_id: pertanyaanIds.materi, user_id, answer: materi || null }),
     }),
     fetch('/api/answers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question_id: pertanyaanIds.metode, user_id, answer: metode.value || null }),
+      body: JSON.stringify({ question_id: pertanyaanIds.metode, user_id, answer: metode || null }),
     }),
     fetch('/api/answers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question_id: pertanyaanIds.waktu, user_id, answer: waktu.value || null }),
+      body: JSON.stringify({ question_id: pertanyaanIds.waktu, user_id, answer: waktu || null }),
     }),
     fetch('/api/answers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question_id: pertanyaanIds.pengajar, user_id, answer: pengajar.value || null }),
+      body: JSON.stringify({ question_id: pertanyaanIds.pengajar, user_id, answer: pengajar || null }),
     }),
   ])
     .then(() => {
@@ -147,7 +153,7 @@ function handleSubmit() {
       router.push('/alumni/konfirmasi')
     })
     .catch(() => {
-      toast.error('Gagal menyimpan saran & masukan!')
-    })
+    toast.error('Gagal menyimpan saran & masukan!')
+  })
 }
 </script>

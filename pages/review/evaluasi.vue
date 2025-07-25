@@ -87,7 +87,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProfileFormStore } from '@/stores/alumni_profile'
 
@@ -96,43 +95,45 @@ interface Question { id: number; text: string; options: Option[] }
 
 const router = useRouter()
 const { form } = useProfileFormStore()
-const showModal = ref(false)
-const likertQuestions = ref<Question[]>([])
-const likertAnswers = ref<string[]>([])
-const openQuestion = ref<Question | null>(null)
-const saran = ref('')
+let showModal = false
+let likertQuestions: Question[] = []
+let likertAnswers: string[] = []
+let openQuestion: Question | null = null
+let saran = ''
 const user_id = form.id
 
-onMounted(async () => {
-  // Fetch Likert questions
+// Fetch Likert questions and open question at script setup
+async function fetchQuestions() {
   const ids = [16, 17, 18, 19]
   const results = await Promise.all(
     ids.map(id => fetch(`/api/pertanyaan/${id}`).then(r => r.json()))
   )
-  likertQuestions.value = results
-  likertAnswers.value = Array(results.length).fill('')
+  likertQuestions = results
+  likertAnswers = Array(results.length).fill('')
 
   // Fetch open question
   const openRes = await fetch('/api/pertanyaan/20')
-  openQuestion.value = await openRes.json()
-})
+  openQuestion = await openRes.json()
+}
+
+fetchQuestions()
 
 function handleLikertChange(idx: number, value: string) {
-  const updated = [...likertAnswers.value]
+  const updated = [...likertAnswers]
   updated[idx] = value
-  likertAnswers.value = updated
+  likertAnswers = updated
 }
 
 async function handleSubmit() {
   // Gabungkan semua pertanyaan dan jawaban
-  const pertanyaanList = openQuestion.value
-    ? [...likertQuestions.value, openQuestion.value]
-    : [...likertQuestions.value]
-  const answers = openQuestion.value
-    ? [...likertAnswers.value, saran.value]
-    : [...likertAnswers.value]
+  const pertanyaanList = openQuestion
+    ? [...likertQuestions, openQuestion]
+    : [...likertQuestions]
+  const answers = openQuestion
+    ? [...likertAnswers, saran]
+    : [...likertAnswers]
   if (answers.some(ans => !ans)) {
-    globalThis.alert('Mohon isi semua pertanyaan terlebih dahulu!')
+    (globalThis as any).alert('Mohon isi semua pertanyaan terlebih dahulu!')
     return
   }
   try {
@@ -147,10 +148,10 @@ async function handleSubmit() {
         })
       })
     }
-    globalThis.alert('Jawaban berhasil disimpan! Terima kasih atas partisipasi Anda.')
-    showModal.value = true
+    (globalThis as any).alert('Jawaban berhasil disimpan! Terima kasih atas partisipasi Anda.')
+    showModal = true
   } catch {
-    globalThis.alert('Gagal menyimpan jawaban!')
+    (globalThis as any).alert('Gagal menyimpan jawaban!')
   }
 }
 </script>

@@ -187,80 +187,86 @@
 </template>
 
 <script setup lang="ts">
+
 declare const alert: (message?: any) => void;
-import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProfileFormStore } from '@/stores/alumni_profile'
 
-const showModal = ref(false)
-const loading = ref(false)
-const jenisInstansiList = ref<{ id: number; name: string }[]>([])
-const jabatanList = ref<{ id: string; nama: string }[]>([])
-const instansiList = ref<{ id: string; agency_name: string }[]>([])
-const pelatihanList = ref<{ id: number; nama: string }[]>([])
+let showModal = false
+let loading = false
+let jenisInstansiList: { id: number; name: string }[] = []
+let jabatanList: { id: string; nama: string }[] = []
+let instansiList: { id: string; agency_name: string }[] = []
+let pelatihanList: { id: number; nama: string }[] = []
 const router = useRouter()
-const form = ref(useProfileFormStore().form)
+let form = useProfileFormStore().form
 const setForm = useProfileFormStore().setForm
 
-watch(() => form.value.jenisInstansi, async (newJenis: string | undefined) => {
+// Replace watch with a function to be called when jenisInstansi changes
+async function handleJenisInstansiChange(newJenis: string | undefined) {
   if (newJenis) {
-    const jenis = jenisInstansiList.value.find((j: { id: number; name: string }) => j.name === newJenis)
+    const jenis = jenisInstansiList.find((j: { id: number; name: string }) => j.name === newJenis)
     if (jenis) {
       try {
         const res = await fetch(`/api/instansi/${jenis.id}`)
-        instansiList.value = await res.json()
+        instansiList = await res.json()
       } catch {
-        instansiList.value = []
+        instansiList = []
       }
     } else {
-      instansiList.value = []
+      instansiList = []
     }
     setForm({ instansi: '' })
   } else {
-    instansiList.value = []
+    instansiList = []
     setForm({ instansi: '' })
   }
-})
+}
 
-onMounted(async () => {
+// Call this function manually when jenisInstansi changes (e.g., @change on select)
+
+// Replace onMounted with a function to be called at the top of the script
+async function fetchInitialData() {
   try {
     const jabatanRes = await fetch('/api/jabatan')
-    jabatanList.value = await jabatanRes.json()
+    jabatanList = await jabatanRes.json()
     const pelatihanRes = await fetch('/api/pelatihan')
-    pelatihanList.value = await pelatihanRes.json()
+    pelatihanList = await pelatihanRes.json()
     const jenisRes = await fetch('/api/jenis_instansi')
-    jenisInstansiList.value = await jenisRes.json()
+    jenisInstansiList = await jenisRes.json()
   } catch {
-    jabatanList.value = []
-    pelatihanList.value = []
-    jenisInstansiList.value = []
+    jabatanList = []
+    pelatihanList = []
+    jenisInstansiList = []
   }
-})
+}
+
+fetchInitialData()
 
 const handleSubmit = async () => {
-  loading.value = true
+  loading = true
   // Temukan id dari jenisInstansi dan instansi
-  const jenis = jenisInstansiList.value.find((j: { id: number; name: string }) => j.name === form.value.jenisInstansi)
-  const instansi = instansiList.value.find((i: { id: string; agency_name: string }) => i.agency_name === form.value.instansi)
-  const jabatanAnda = jabatanList.value.find((j: { id: string; nama: string }) => j.nama === form.value.jabatanAnda)
+  const jenis = jenisInstansiList.find((j: { id: number; name: string }) => j.name === form.jenisInstansi)
+  const instansi = instansiList.find((i: { id: string; agency_name: string }) => i.agency_name === form.instansi)
+  const jabatanAnda = jabatanList.find((j: { id: string; nama: string }) => j.nama === form.jabatanAnda)
 
-  if (!form.value.namaAlumni || !jenis?.id || !instansi?.id || !jabatanAnda?.id || !form.value.pelatihan || !form.value.hubungan || !form.value.jabatanAlumni || !form.value.namaAnda) {
+  if (!form.namaAlumni || !jenis?.id || !instansi?.id || !jabatanAnda?.id || !form.pelatihan || !form.hubungan || !form.jabatanAlumni || !form.namaAnda) {
     alert('Semua field wajib diisi!')
-    loading.value = false
+    loading = false
     return
   }
 
   try {
     const payload = {
-      id: form.value.id,
-      name: form.value.namaAnda,
+      id: form.id,
+      name: form.namaAnda,
       instansiKategoriId: jenis?.id || null,
       instansiId: instansi?.id || null,
       jabatanId: jabatanAnda?.id || null,
-      namaAlumni: form.value.namaAlumni,
-      hubungan: form.value.hubungan,
-      jabatan_alumni: form.value.jabatanAlumni,
-      pelatihanId: form.value.pelatihan ? Number(form.value.pelatihan) : null,
+      namaAlumni: form.namaAlumni,
+      hubungan: form.hubungan,
+      jabatan_alumni: form.jabatanAlumni,
+      pelatihanId: form.pelatihan ? Number(form.pelatihan) : null,
       nipNrpNik: '',
       domisiliId: null,
       tahunPelatihanId: null,
@@ -280,14 +286,14 @@ const handleSubmit = async () => {
           setForm({ id: json.id })
         }
       } catch {}
-      showModal.value = true
+      showModal = true
     } else {
       alert('Gagal menyimpan data. Silakan cek kembali isian Anda.\n' + rawResponse)
     }
   } catch (err) {
     alert('Terjadi kesalahan. Silakan coba lagi.\n' + err)
   } finally {
-    loading.value = false
+    loading = false
   }
 }
 
