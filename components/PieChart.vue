@@ -1,13 +1,31 @@
+<!-- components/PieChart.vue -->
 <template>
-  <div>
-    <Chart :type="'pie'" :data="chartData" :options="options" />
+  <div class="w-full h-96">
+    <Pie ref="pieChart" :data="chartData" :options="chartOptions" />
   </div>
 </template>
 
 <script setup>
-import { Chart } from 'vue-chartjs'
-defineProps({
-  chartData: { type: Object, required: true },
-  options: { type: Object, required: true },
+import { Pie } from 'vue-chartjs'
+import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from 'chart.js'
+
+ChartJS.register(Title, Tooltip, Legend, ArcElement)
+
+const props = defineProps({
+  data: {
+    type: Object,
+    required: true
+  },
+  options: {
+    type: Object,
+    default: () => ({})
+  }
 })
+
+const chartData = computed(() => props.data)
+const chartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  ...props.options
+}))
 </script>
